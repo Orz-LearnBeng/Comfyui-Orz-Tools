@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "Comfyui-Orz-Tools"
 version = "1.0.0"
-description = "ComfyUI 视频工具插件"
+description = "ComfyUI 视频工具插件 - 提供多种视频尺寸选择"
 authors = [
     {name = "Orz-LearnBeng", email = "your-email@example.com"}
 ]

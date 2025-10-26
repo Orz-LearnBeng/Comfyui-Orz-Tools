@@ -15,15 +15,11 @@ class VideoSizeSelectionOrz:
 
     @classmethod
     def INPUT_TYPES(cls):
-        """定义输入类型 - 六个互斥的布尔选项"""
+        """使用单个字符串输入来存储当前选择"""
+        resolution_names = list(cls.RESOLUTIONS.keys())
         return {
             "required": {
-                "竖版480×832 (约9:16)": ("BOOLEAN", {"default": False}),
-                "竖版576×1024 (9:16)": ("BOOLEAN", {"default": False}),
-                "竖版720×1280 (9:16)": ("BOOLEAN", {"default": False}),
-                "横版832×480 (约16:9)": ("BOOLEAN", {"default": False}),
-                "横版1024×576 (16:9)": ("BOOLEAN", {"default": False}),
-                "横版1280×720 (16:9)": ("BOOLEAN", {"default": True}),  # 默认选中
+                "selected_size": ("STRING", {"default": "横版1280×720 (16:9)"}),
             }
         }
 
@@ -33,19 +29,17 @@ class VideoSizeSelectionOrz:
     CATEGORY = "Orz-Tools/视频"
     OUTPUT_NODE = False
 
-    def get_selected_size(self, **kwargs):
+    def get_selected_size(self, selected_size):
         """
-        根据选中的按钮返回对应的宽高尺寸
+        根据选中的尺寸返回对应的宽高
         """
-        # 直接使用kwargs中的键来匹配RESOLUTIONS
-        for size_name, is_selected in kwargs.items():
-            if is_selected and size_name in self.RESOLUTIONS:
-                width, height = self.RESOLUTIONS[size_name]
-                print(f"VideoSizeSelectionOrz: 选中 {size_name} -> {width}x{height}")
-                return (width, height)
+        if selected_size in self.RESOLUTIONS:
+            width, height = self.RESOLUTIONS[selected_size]
+            print(f"VideoSizeSelectionOrz: 选中 {selected_size} -> {width}x{height}")
+            return (width, height)
         
-        # 兜底：如果没有选中的，返回默认值
-        print("VideoSizeSelectionOrz: 没有选中任何尺寸，使用默认值 1280x720")
+        # 兜底：如果没有匹配的，返回默认值
+        print("VideoSizeSelectionOrz: 尺寸选择无效，使用默认值 1280x720")
         return (1280, 720)
 
 
