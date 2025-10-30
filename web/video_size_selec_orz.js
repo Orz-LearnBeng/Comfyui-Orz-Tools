@@ -101,8 +101,8 @@ app.registerExtension({
                     font-size: 10px;
                     width: 100%;
                     min-height: 23px;
-                    background-color: ${res.value === currentSelected ? "rgba(76, 175, 80, 0.8)" : "rgba(68, 68, 68, 0.6)"};
-                    color: ${res.value === currentSelected ? "white" : "#ddd"};
+                    background-color: rgba(68, 68, 68, 0.6);
+                    color: #ddd;
                     transition: all 0.2s ease;
                     overflow: hidden;
                     backdrop-filter: blur(4px);
@@ -164,38 +164,36 @@ app.registerExtension({
                 
                 // 鼠标悬停效果
                 button.addEventListener("mouseenter", () => {
-                    if (res.value !== currentSelected) {
-                        button.style.backgroundColor = "rgba(85, 85, 85, 0.8)";
-                        button.style.borderColor = "#777";
-                        button.style.transform = "translateY(-1px)";
-                        button.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                    }
+                    button.style.backgroundColor = "rgba(85, 85, 85, 0.8)";
+                    button.style.borderColor = "#777";
+                    button.style.transform = "translateY(-1px)";
+                    button.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
                 });
                 
                 button.addEventListener("mouseleave", () => {
-                    if (res.value !== currentSelected) {
-                        button.style.backgroundColor = "rgba(68, 68, 68, 0.6)";
-                        button.style.borderColor = "#555";
-                        button.style.transform = "translateY(0px)";
-                        button.style.boxShadow = "none";
-                    }
+                    button.style.backgroundColor = "rgba(68, 68, 68, 0.6)";
+                    button.style.borderColor = "#555";
+                    button.style.transform = "translateY(0px)";
+                    button.style.boxShadow = "none";
                 });
                 
                 // 点击事件
                 button.addEventListener("click", () => {
-                    // 更新所有按钮状态
-                    buttons.forEach(btn => {
-                        const isSelected = btn === button;
-                        btn.style.backgroundColor = isSelected ? "rgba(76, 175, 80, 0.8)" : "rgba(68, 68, 68, 0.6)";
-                        btn.style.color = isSelected ? "white" : "#ddd";
-                        btn.style.borderColor = isSelected ? "#4CAF50" : "#555";
-                        btn.style.transform = isSelected ? "translateY(-1px)" : "translateY(0px)";
-                        btn.style.boxShadow = isSelected ? "0 2px 4px rgba(76, 175, 80, 0.3)" : "none";
-                    });
-                    
                     // 更新隐藏输入的值
                     currentSelected = res.value;
                     stringWidget.value = res.value;
+                    
+                    // 触发绿色闪烁效果
+                    button.style.backgroundColor = "rgba(76, 175, 80, 0.8)";
+                    button.style.borderColor = "#4CAF50";
+                    button.style.boxShadow = "0 0 8px rgba(76, 175, 80, 0.5)";
+                    
+                    // 300毫秒后恢复原样
+                    setTimeout(() => {
+                        button.style.backgroundColor = "rgba(68, 68, 68, 0.6)";
+                        button.style.borderColor = "#555";
+                        button.style.boxShadow = "none";
+                    }, 300);
                     
                     // 触发节点更新
                     if (this.onInputChanged) {

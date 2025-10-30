@@ -22,8 +22,6 @@ app.registerExtension({
             let currentText = textWidget.value;
             let currentFontSize = fontSizeWidget.value;
             let isLocked = lockedWidget.value;
-            let isPasswordProtected = false; // 密码保护状态
-            let isUnlocked = false; // 是否已解锁
             
             // 隐藏原始控件
             [textWidget, fontSizeWidget, lockedWidget].forEach(widget => {
@@ -113,7 +111,7 @@ app.registerExtension({
                 fontSizeWidget.value = currentFontSize;
                 
                 // 更新文本框字体大小
-                if (textArea && (!isPasswordProtected || isUnlocked)) {
+                if (textArea) {
                     textArea.style.fontSize = currentFontSize + "px";
                 }
                 
@@ -137,7 +135,7 @@ app.registerExtension({
             
             // 紧凑锁定按钮
             const lockButton = document.createElement("div");
-            lockButton.innerHTML = isLocked ? "🚫" : "📝";
+            lockButton.innerHTML = isLocked ? "🔒" : "🔓";
             lockButton.title = isLocked ? "Locked - Click to unlock" : "Editable - Click to lock";
             lockButton.style.cssText = `
                 width: 24px;
@@ -156,20 +154,20 @@ app.registerExtension({
             `;
             
             lockButton.addEventListener("click", () => {
-                if (isPasswordProtected && !isUnlocked) return; // 密码保护未解锁时不能操作锁定
-                
                 isLocked = !isLocked;
                 lockedWidget.value = isLocked;
                 
-                lockButton.innerHTML = isLocked ? "🚫" : "📝";
+                lockButton.innerHTML = isLocked ? "🔒" : "🔓";
                 lockButton.style.background = isLocked ? "rgba(255, 107, 107, 0.3)" : "rgba(76, 175, 80, 0.3)";
                 lockButton.style.borderColor = isLocked ? "#ff6b6b" : "#4CAF50";
                 lockButton.title = isLocked ? "Locked - Click to unlock" : "Editable - Click to lock";
                 
                 // 更新文本框可编辑状态
                 if (textArea) {
-                    textArea.readOnly = isLocked || (isPasswordProtected && !isUnlocked);
-                    updateTextAreaAppearance();
+                    textArea.readOnly = isLocked;
+                    textArea.style.backgroundColor = isLocked ? "rgba(60, 60, 60, 0.7)" : "rgba(40, 40, 40, 0.9)";
+                    textArea.style.cursor = isLocked ? "not-allowed" : "text";
+                    textArea.style.opacity = isLocked ? "0.8" : "1";
                 }
                 
                 if (this.onInputChanged) {
@@ -186,170 +184,39 @@ app.registerExtension({
                 lockButton.style.transform = "scale(1)";
             });
             
-            // 密码保护按钮 - 只有两个状态：解锁(绿色)和加密(黄色)
-            const passwordButton = document.createElement("div");
-            passwordButton.innerHTML = isPasswordProtected ? "🔐" : "🔓";
-            passwordButton.title = isPasswordProtected ? 
-                "Password Protected - Click to unlock" : 
-                "Click to enable password protection";
-            passwordButton.style.cssText = `
-                width: 24px;
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 3px;
-                cursor: pointer;
-                font-size: 12px;
-                background: ${isPasswordProtected ? "rgba(255, 193, 7, 0.3)" : "rgba(76, 175, 80, 0.3)"};
-                border: 1px solid ${isPasswordProtected ? "#FFC107" : "#4CAF50"};
-                transition: all 0.2s;
-                user-select: none;
-                flex-shrink: 0;
-            `;
-            
-            passwordButton.addEventListener("click", () => {
-                if (isPasswordProtected && !isUnlocked) {
-                    // 如果已经启用密码保护但未解锁，点击时弹出密码输入框
-                    promptForPassword();
-                    return;
-                }
-                
-                // 切换密码保护状态
-                isPasswordProtected = !isPasswordProtected;
-                
-                // 如果开启密码保护，重置解锁状态
-                if (isPasswordProtected) {
-                    isUnlocked = false;
-                }
-                
-                // 更新密码按钮状态
-                updatePasswordButton();
-                
-                // 更新文本框状态
-                if (textArea) {
-                    textArea.readOnly = isLocked || (isPasswordProtected && !isUnlocked);
-                    updateTextAreaAppearance();
-                }
-                
-                if (this.onInputChanged) {
-                    this.onInputChanged();
-                }
-            });
-            
-            // 更新密码按钮状态的函数
-            const updatePasswordButton = () => {
-                passwordButton.innerHTML = isPasswordProtected ? "🔐" : "🔓";
-                passwordButton.style.background = isPasswordProtected ? 
-                    "rgba(255, 193, 7, 0.3)" : 
-                    "rgba(76, 175, 80, 0.3)";
-                passwordButton.style.borderColor = isPasswordProtected ? 
-                    "#FFC107" : 
-                    "#4CAF50";
-                passwordButton.title = isPasswordProtected ? 
-                    "Password Protected - Click to unlock" : 
-                    "Click to enable password protection";
-            };
-            
-            // 密码按钮悬停效果
-            passwordButton.addEventListener("mouseenter", () => {
-                passwordButton.style.transform = "scale(1.1)";
-            });
-            
-            passwordButton.addEventListener("mouseleave", () => {
-                passwordButton.style.transform = "scale(1)";
-            });
-            
-            // 右侧按钮容器
-            const rightButtons = document.createElement("div");
-            rightButtons.style.cssText = `
-                display: flex;
-                gap: 4px;
-            `;
-            
-            rightButtons.appendChild(lockButton);
-            rightButtons.appendChild(passwordButton);
-            
             controls.appendChild(fontSizeControl);
-            controls.appendChild(rightButtons);
+            controls.appendChild(lockButton);
             
             // 创建文本框
             const textArea = document.createElement("textarea");
             textArea.value = currentText;
-            
-            // 更新文本框外观的函数
-            const updateTextAreaAppearance = () => {
-                if (isPasswordProtected && !isUnlocked) {
-                    // 密码保护且未解锁状态
-                    textArea.style.background = "rgba(60, 60, 60, 0.7)";
-                    textArea.style.color = "transparent";
-                    textArea.style.textShadow = "0 0 8px rgba(200, 200, 200, 0.3)";
-                    textArea.style.cursor = "pointer";
-                    textArea.readOnly = true;
-                    textArea.placeholder = "请解锁";
-                } else {
-                    // 正常状态或已解锁状态
-                    textArea.style.background = isLocked ? "rgba(60, 60, 60, 0.7)" : "rgba(40, 40, 40, 0.9)";
-                    textArea.style.color = "#e8e8e8";
-                    textArea.style.textShadow = "none";
-                    textArea.style.cursor = isLocked ? "not-allowed" : "text";
-                    textArea.readOnly = isLocked;
-                    textArea.placeholder = "";
-                    
-                    // 确保字体大小可以调节
-                    if (currentFontSize) {
-                        textArea.style.fontSize = currentFontSize + "px";
-                    }
-                }
-            };
-            
-            // 初始设置文本框外观
             textArea.style.cssText = `
                 flex: 1;
                 width: 100%;
                 min-height: 60px;
+                background: ${isLocked ? "rgba(60, 60, 60, 0.7)" : "rgba(40, 40, 40, 0.9)"};
                 border: none;
                 padding: 10px;
+                color: #e8e8e8;
                 font-size: ${currentFontSize}px;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 resize: none;
                 outline: none;
+                cursor: ${isLocked ? "not-allowed" : "text"};
+                readOnly: ${isLocked};
+                opacity: ${isLocked ? "0.8" : "1"};
                 line-height: 1.4;
                 box-sizing: border-box;
                 overflow: auto;
-                transition: all 0.3s ease;
+                transition: all 0.3s ease; /* 添加过渡动画 */
             `;
-            updateTextAreaAppearance();
             
             textArea.addEventListener("input", (e) => {
-                if (isPasswordProtected && !isUnlocked) return; // 密码保护未解锁时不能编辑
-                
                 currentText = e.target.value;
                 textWidget.value = currentText;
                 
                 if (this.onInputChanged) {
                     this.onInputChanged();
-                }
-            });
-            
-            // 密码输入提示函数
-            const promptForPassword = () => {
-                const password = prompt("请输入密码查看内容:", "");
-                if (password === "Orz") {
-                    // 密码验证成功后直接切换到解锁状态
-                    isUnlocked = true;
-                    isPasswordProtected = false; // 关闭密码保护
-                    updatePasswordButton(); // 更新密码按钮状态
-                    updateTextAreaAppearance();
-                } else if (password !== null) {
-                    alert("密码错误，请重试！");
-                }
-            };
-            
-            // 点击文本框时如果密码保护未解锁，弹出密码输入框
-            textArea.addEventListener("click", (e) => {
-                if (isPasswordProtected && !isUnlocked) {
-                    promptForPassword();
                 }
             });
             
