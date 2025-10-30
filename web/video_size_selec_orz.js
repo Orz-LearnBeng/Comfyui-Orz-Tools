@@ -24,7 +24,7 @@ app.registerExtension({
                 stringWidget.parentElement.style.display = "none";
             }
             
-            // 分辨率选项 - 更丰富的文字信息
+            // 分辨率选项
             const resolutions = [
                 { 
                     icon: "📱",
@@ -70,15 +70,17 @@ app.registerExtension({
                 }
             ];
             
-            // 创建自定义按钮组容器 - 单列布局
+            // 创建自定义按钮组容器 - 左右各预留4px内边距
             const buttonContainer = document.createElement("div");
             buttonContainer.style.cssText = `
-                padding: 6px 4px;
+                width: 100%;
+                height: 100%;
                 display: flex;
                 flex-direction: column;
-                gap: 5px;
-                width: 100%;
-                align-items: center;
+                gap: 4px;
+                padding: 8px 4px; /* 左右各预留4px内边距 */
+                box-sizing: border-box;
+                overflow: hidden;
             `;
             
             // 存储按钮引用
@@ -92,20 +94,22 @@ app.registerExtension({
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding: 6px 10px;
+                    padding: 4px 8px;
                     border: 1px solid #555;
-                    border-radius: 5px;
+                    border-radius: 4px;
                     cursor: pointer;
                     font-size: 10px;
-                    width: 100%; /* 修改这里：从90%改为100% */
+                    width: 100%;
+                    min-height: 23px;
                     background-color: ${res.value === currentSelected ? "rgba(76, 175, 80, 0.8)" : "rgba(68, 68, 68, 0.6)"};
                     color: ${res.value === currentSelected ? "white" : "#ddd"};
                     transition: all 0.2s ease;
                     overflow: hidden;
-                    height: 24px;
                     backdrop-filter: blur(4px);
-                    gap: 8px;
+                    gap: 6px;
                     text-align: center;
+                    box-sizing: border-box;
+                    flex: 1; /* 关键属性 - 让按钮均匀分配高度 */
                 `;
                 
                 // 创建图标元素
@@ -116,6 +120,7 @@ app.registerExtension({
                     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
                     width: 16px;
                     text-align: center;
+                    flex-shrink: 0;
                 `;
                 
                 // 创建类型元素
@@ -123,7 +128,9 @@ app.registerExtension({
                 type.textContent = res.type;
                 type.style.cssText = `
                     font-weight: 600;
-                    width: 28px;
+                    width: 24px;
+                    font-size: 10px;
+                    flex-shrink: 0;
                 `;
                 
                 // 创建尺寸元素
@@ -132,8 +139,10 @@ app.registerExtension({
                 size.style.cssText = `
                     font-family: 'Courier New', monospace;
                     font-weight: bold;
-                    width: 70px;
+                    width: 65px;
                     text-align: center;
+                    font-size: 10px;
+                    flex-shrink: 0;
                 `;
                 
                 // 创建比例元素
@@ -142,8 +151,9 @@ app.registerExtension({
                 ratio.style.cssText = `
                     opacity: 0.9;
                     font-size: 9px;
-                    width: 40px;
+                    width: 35px;
                     text-align: center;
+                    flex-shrink: 0;
                 `;
                 
                 // 将元素添加到按钮
@@ -200,12 +210,46 @@ app.registerExtension({
             });
             
             // 将按钮组添加到节点
-            this.addDOMWidget("custom_buttons", "custom", buttonContainer, {});
+            this.addDOMWidget("custom_buttons", "custom", buttonContainer, {
+                serialize: false
+            });
             
-            // 设置节点尺寸 - 单列布局，宽度增加以容纳更多内容
-            this.size = [220, 200];
+            // 设置节点初始尺寸 - 宽度210px，高度260px
+            this.size = [210, 260];
+            
+            // 存储引用用于调整大小处理
+            this.customButtonContainer = buttonContainer;
+            this.customButtons = buttons;
+            
+            // 使用ResizeObserver确保按钮随节点大小自适应
+            if (typeof ResizeObserver !== 'undefined') {
+                this.resizeObserver = new ResizeObserver((entries) => {
+                    for (let entry of entries) {
+                        const { width, height } = entry.contentRect;
+                        
+                        // 当节点高度改变时，按钮高度会自动适应，因为设置了flex: 1
+                        console.log(`节点尺寸变化: ${width}x${height}`);
+                    }
+                });
+                
+                // 开始观察节点元素
+                if (this.el) {
+                    this.resizeObserver.observe(this.el);
+                }
+            }
             
             return result;
+        };
+        
+        // 节点移除时清理ResizeObserver
+        const onRemoved = nodeType.prototype.onRemoved;
+        nodeType.prototype.onRemoved = function() {
+            if (this.resizeObserver) {
+                this.resizeObserver.disconnect();
+            }
+            if (onRemoved) {
+                return onRemoved.apply(this, arguments);
+            }
         };
     }
 });
